@@ -20,7 +20,7 @@
         }
     
         var drawClock = function() {
-			time = new Date()
+			var time = new Date()
             if (!ctx) {
                 var h = time.getHours();
                 var m = time.getMinutes();
@@ -51,6 +51,7 @@
             drawHand(time.getSeconds(), 80);
             drawHand(time.getMinutes() + time.getSeconds() * 1.0 / 60, 60);
             drawHand(time.getHours() % 12 * 5 + time.getMinutes() * 1.0 / 12, 40);
+			
         }
 		
 		Thread().	// 使用主线程线程

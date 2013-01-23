@@ -178,11 +178,15 @@ __Thread.prototype = {
 	
 	loop: function(__n){
 		var self = this,
-			ret = new __Thread();
-			ret.index = 0;
-			ret.args = [0];
+			ret = new __Thread(),
+			isBreak = false;
+		ret.index = 0;
+		ret.args = [0];
 		ret.fire = function(){
 			var fn;
+			if(isBreak){
+				return this;
+			}
 			if(__n < 0){
 				(fn = this.callbacks[this.index]) ? 
 				(++this.index) && fn() : (this.index = 0) || this.fire();
@@ -208,7 +212,7 @@ __Thread.prototype = {
 			tmp.unshift(this.args[0]);
 			this.args = tmp;
 			return this;
-		}
+		};
 		ret.loopEnd = function(){
 			var that = this;
 				
@@ -216,9 +220,12 @@ __Thread.prototype = {
 				
 			return self;
 		};
+		ret.breakOut = function(){
+			isBreak = true;
+		};
 		return ret;
 	}
-}
+};
 
 cache[expando] = new __Thread(expando);
 
