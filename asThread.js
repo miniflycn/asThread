@@ -229,30 +229,23 @@ __Thread.prototype = {
 	right: function(__true){
 		var self = this,
 			ret = new __Thread(),
+			leftObj = new __Thread(),
 			fn = function(){
 			var isTrue = typeof __true === "function" ? __true.call(arguments) : __true;
 			if(isTrue){
 				self.callbacks.push(function(){ret.run();});
 			}else{
-				if(ret.leftObj){
-					self.callbacks.push(function(){ret.leftObj.run();});
+				if(leftObj){
+					self.callbacks.push(function(){leftObj.run();});
 				}
 			};
 		};
 		ret.left = function(){
 			var self = this;
-			this.leftObj = new __Thread();
-			this.leftObj.leftEnd = function(){
+			leftObj.leftEnd = function(){
 				return self;
 			};
-			this.leftObj.fire = function(){
-				var fn,
-					ret = this;
-				(fn = this.callbacks.shift()) ? fn() : self.fire();
-		
-				return ret;
-			};
-			return this.leftObj;
+			return leftObj;
 		};
 		ret.rightEnd = function(){
 			var ret = new __Thread();
@@ -264,9 +257,8 @@ __Thread.prototype = {
 					self.run();
 				}
 			}
-			this.leftObj && this.leftObj.callbacks.push(function(){ret.run(true);}); 
+			leftObj.callbacks.push(function(){ret.run(true);}); 
 			this.callbacks.push(function(){ret.run(true);});
-			self.callbacks.push(function(){ret.run(true);});
 			return ret;
 		};
 		this.callbacks.push(this.__package(fn));
