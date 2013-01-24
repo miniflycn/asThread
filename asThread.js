@@ -2,7 +2,7 @@
 	
 'use strict'
 
-var version = "0.4",
+var version = "0.5b",
 	minImm = 1,
 	max = 10,
 	uid = 0;	
@@ -41,13 +41,30 @@ if(!(setImm = msSetImmediate) && window.postMessage){
 		timeouts.push(__fn);
 		window.postMessage(messageName, "*");
 	};
+	
+	window.addEventListener("message", handleMessage, true);
+	
 }else{
 	setImm = function(__fn){
 		setTimeout(__fn, 0);
 	}
 }
 
-window.addEventListener("message", handleMessage, true);
+function addHandler(__elem, __type, __handler){
+	if(__elem.addEventListener){
+		__elem.addEventListener(__type, __handler, false);
+	}else{
+		__elem.attachEvent("on" + __type, __handler);
+	}
+}
+
+function removeHandler(__elem, __type, __handler){
+	if(__elem.removeEventListener){
+		__elem.removeEventListener(__type, __handler, false);
+	}else{
+		__elem.detachEvent("on" + __type, __handler);
+	}
+}
 
 function setThread(__name, __Thread){
 	cache[__name] = __Thread;
@@ -125,6 +142,7 @@ __Thread.prototype = {
 	stop: function(){	
 		callbacks.push(this);
 		this.isStop = true;
+		this.fired = false;
 		
 		return this;
 	},
@@ -204,6 +222,7 @@ __Thread.prototype = {
 			if(arguments.length){
 				this.define(tool_slice.call(arguments));
 			}
+			this.isStop = false;
 			this.fired = true;
 			this.fire();
 		}
@@ -288,10 +307,10 @@ __Thread.prototype = {
 			fn = function(){
 			var isTrue = typeof __true === "function" ? __true.call(self, self.args) : __true;
 			if(isTrue){
-				self.callbacks.push(function(){ret.run();});
+				self.callbacks.unshift(function(){ret.run();});
 			}else{
 				if(leftObj){
-					self.callbacks.push(function(){leftObj.run();});
+					self.callbacks.unshift(function(){leftObj.run();});
 				}
 			};
 		};
@@ -313,29 +332,48 @@ __Thread.prototype = {
 			return leftObj;
 		};
 		/**********************
-		* 退出Right分支，返回原(伪)线程
+		* 退出Right分支，返回原线程
 		*/
 		ret.rightEnd = function(){
-			var ret = new __Thread(self.name),
-				isFirst = true;
-			/**********************
-			* 修改run方法，使得其效果和原线程相似
-			*/
-			ret.run = function(){
-				if(isFirst){
-					self.run();
-					isFirst = false;
-				}else if(!this.fired){
-					this.fire();
-				}
-				
-				return this;
-			}
-			leftObj.callbacks.push(function(){ret.run();}); 
-			this.callbacks.push(function(){ret.run();});
-			return ret;
+			
+			leftObj.callbacks.push(function(){self.fire();}); 
+			this.callbacks.push(function(){self.fire();});
+			
+			setThread(this.name, self);
+			return self;
 		};
 		this.callbacks.push(this.__package(fn));
+		
+		return ret;
+	},
+	
+	/**********************
+	 * 创建分支线程On
+	 */
+	on: function(__elem, __type, __attach, __detach){
+		var self = this,
+			ret = new __Thread(this.name),
+			attach = __attach || addHandler,
+			detach = __attach ? (__detach || tool_nullFun) : removeHandler,
+			handler = function(event){
+				ret.args = [event];
+				ret.run();
+			};
+			
+		/**********************
+		* 退出On分支，返回原线程
+		*/
+		ret.onEnd = function(){
+			this.callbacks.push(function(){
+				detach(__elem, __type, handler);
+				self.fire();
+			});
+			
+			setThread(this.name, self);
+			return self;
+		};
+		
+		this.callbacks.push(function(){attach(__elem, __type, handler)});
 		
 		return ret;
 	}
