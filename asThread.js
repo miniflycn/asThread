@@ -1,4 +1,6 @@
 ﻿(function(host){
+	
+'use strict'
 
 var version = "0.1a",
 	minImm = 1,
@@ -43,21 +45,6 @@ if(!(setImm = msSetImmediate)){
 
 window.addEventListener("message", handleMessage, true);
 
-function fire(){
-	var fn;
-	begin = begin || (new Date()).getTime();
-	firing = true;
-	for(var i = callbacks.length; i--;){
-		callbacks.shift().fire();
-	}
-	firing = false;
-	end = (new Date()).getTime();
-	if(fn = callbacks.shift()){
-		(end - begin) > time ? 
-		(begin = (new Date()).getTime()) && setImm(function(){fn.fire();}) : fn.fire();
-	}
-}
-
 function __Thread(__name){
 	if(__name){
 		this.name = __name;
@@ -84,7 +71,7 @@ __Thread.prototype = {
 				args ? (returnVal = __fn.apply(self.self, args)) : (returnVal = __fn.apply(self.self));
 				returnVal !== undefined ? self.returnVal = returnVal : null;
 				
-				callbacks.length > 0 ? self.fireOther() : self.fire();
+				self.fire();
 			};
 		}else{
 			return function(){
@@ -97,8 +84,6 @@ __Thread.prototype = {
 					
 					self.fire();
 				}, __delay);
-				
-				callbacks.length > 0 ? self.fireOther() : null;
 			}
 		}
 	},
@@ -113,23 +98,22 @@ __Thread.prototype = {
 					
 				self.fire();
 			});
-				
-			callbacks.length > 0 ? self.fireOther() : null;
 		}
-	},
-	
-	fireOther: function(){
-		this.stop();
-		if(firing) return;
-		fire();
-		
-		return this;
 	},
 	
 	stop: function(){	
 		callbacks.push(this);
 		
 		return this;
+	},
+	
+	del: function(){
+		if(this.name = expando){
+			console && console.error("主线程无法删除");
+		}else{
+			cache[this.name] = null;
+			delete cache[this.name];
+		}
 	},
 	
 	fire: function(){
