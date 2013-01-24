@@ -60,7 +60,8 @@ function fire(){
 
 function __Thread(__name){
 	if(__name){
-		this.name = cache[__name] = __name
+		this.name = __name;
+		cache[__name] = this;
 		length++;
 	}
 	this.args = undefined;
@@ -231,7 +232,7 @@ __Thread.prototype = {
 			ret = new __Thread(),
 			leftObj = new __Thread(),
 			fn = function(){
-			var isTrue = typeof __true === "function" ? __true.call(arguments) : __true;
+			var isTrue = typeof __true === "function" ? __true.call(self, self.args) : __true;
 			if(isTrue){
 				self.callbacks.push(function(){ret.run();});
 			}else{
@@ -248,7 +249,7 @@ __Thread.prototype = {
 			return leftObj;
 		};
 		ret.rightEnd = function(){
-			var ret = new __Thread();
+			var ret = new __Thread(self.name);	//替换掉原来的Thread
 			ret.run = function(__flag){
 				if(!this.fired && __flag){
 					this.fired = true;
