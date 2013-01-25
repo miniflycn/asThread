@@ -8,12 +8,11 @@
  */
 (function(root, factory) {
 	if(typeof define === "function"){
-		define("Thread" ,factory);	// AMD || CMD
+		define("Thread", factory);	// AMD || CMD
 	}else{
-		root.Thread = factory;	// <script>
+		root.Thread = factory();	// <script>
 	}
-}(this, function () {
-	
+}(this, function(){
 'use strict'
 
 var version = "0.5b",
@@ -384,28 +383,52 @@ __Thread.prototype = {
 	 */
 	on: function(__elem, __type, __attach, __detach){
 		var self = this,
-			ret = new __Thread(this.name),
+			ret = new __Thread(self.name),
 			attach = __attach || addHandler,
 			detach = __attach ? (__detach || tool_nullFun) : removeHandler,
 			handler = function(event){
 				ret.args = [event];
 				ret.run();
 			};
+		
+		if(self.__runList){
+			self.onEnd();
+			ret.__runList = self.__runList;
+			ret.__return = self.__return;
+			ret.__exitList = self.__exitList;
+			self = self.__return;
+		}else{
+			ret.__runList = [];
+			ret.__exitList = [];
+			ret.__return = self;
+			self.callbacks.push(function(){
+				var list = ret.__runList;
+				for(var i = list.length; i--;){
+					list[i]();
+				}
+			});
+			self.then(function(){
+				var list = ret.__exitList;
+				for(var i = list.length; i--;){
+					list[i]();
+				}
+			});
+		}
+		
+		ret.__runList.push(function(){attach(__elem, __type, handler);});
+		ret.__exitList.push(function(){detach(__elem, __type, handler);});
 			
 		/**********************
 		* 退出On分支，返回原线程
 		*/
 		ret.onEnd = function(){
 			this.callbacks.push(function(){
-				detach(__elem, __type, handler);
 				self.fire();
 			});
 			
 			setThread(this.name, self);
 			return self;
 		};
-		
-		this.callbacks.push(function(){attach(__elem, __type, handler)});
 		
 		return ret;
 	}
@@ -428,4 +451,4 @@ function Thread(__name){
 
 return Thread;
 
-})());
+}));

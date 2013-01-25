@@ -7,14 +7,18 @@
 </head>
 <body>
     <button id = "b">点我</button>
+	<button id = "c">点我</button>
     <script>
 		var ele = document.getElementById("b");
+		var ele2 = document.getElementById("c");
 	
         Thread().	// 获得线程
 		then(function(){alert("请点击按钮")}, 5000).	//然后等5秒显示"请点击按钮"
 		on(ele, "click").	// 事件分支On开始，如果ele触发了click事件
 			then(function(){alert("你成功点击了")}).	//那么执行你成功点击了
-		onEnd().	// 事件分支On结束
+		on(ele2, "click").
+			then(function(){alert("点了另一个")}).
+		onEnd().
 		then(function(){alert("都说可以的了")}).	// 然后弹出"都说可以的了"
 		run();	//启动线程
     </script>
