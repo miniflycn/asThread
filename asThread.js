@@ -1,4 +1,18 @@
-﻿(function(host){
+﻿/**!
+ * @ignore
+ * Thread | asThread
+ * @author Justany_WhiteSnow
+ * @mail miniflycn@justany.net
+ * @homepage https://github.com/miniflycn/asThread
+ * @support requireJs(AMD)、Arale|SeaJs(CMD)、mass-Framework(AMD) and any other Non-module Loader
+ */
+(function(root, factory) {
+	if(typeof define === "function"){
+		define("Thread" ,factory);	// AMD || CMD
+	}else{
+		root.Thread = factory;	// <script>
+	}
+}(this, function () {
 	
 'use strict'
 
@@ -7,7 +21,7 @@ var version = "0.5b",
 	max = 10,
 	uid = 0;	
 	
-var expando = "asThread" + ( version + Math.random() ).replace( /\D/g, "" ),
+var expando = "Thread" + ( version + Math.random() ).replace( /\D/g, "" ),
 	cache = {},
 	length = 0,
 	setImm = null,
@@ -86,13 +100,21 @@ function __Thread(__name){
 	this.isStop = false;
 	this.uid = uid++;
 }
+
+/**
+ * 真正的Thread
+ * @private
+ * @class Thread
+ */
 __Thread.prototype = {
 
 	constructor: Thread,
 	
-	/**********************
-	 * 打包工具1
-	 */
+	/**
+	* 打包工具1
+	* @private
+	* @type {Function}
+	*/
 	__package: function(__fn, __delay){
 		var self = this;
 		if(!__delay){
@@ -120,9 +142,11 @@ __Thread.prototype = {
 		}
 	},
 	
-	/**********************
-	 * 打包工具2
-	 */
+	/**
+	* 打包工具2
+	* @private
+	* @type {Function}
+	*/
 	__package2: function(__fn){
 		var self = this;
 		return function(){
@@ -136,9 +160,9 @@ __Thread.prototype = {
 		}
 	},
 	
-	/**********************
-	 * 阻止线程继续运行
-	 */
+	/**
+	* 停止当前线程
+	*/
 	stop: function(){	
 		callbacks.push(this);
 		this.isStop = true;
@@ -147,9 +171,9 @@ __Thread.prototype = {
 		return this;
 	},
 	
-	/**********************
-	 * 删除线程
-	 */
+	/**
+	* 删除当前线程
+	*/
 	del: function(){
 		if(this.name = expando){
 			console && console.error("You shouldn't destroy the main thread!");
@@ -160,9 +184,9 @@ __Thread.prototype = {
 		}
 	},
 	
-	/**********************
-	 * 触发线程执行下一个打包函数
-	 */
+	/**
+	* 触发当前线程，请优先考虑使用run方法。
+	*/
 	fire: function(){
 		var fn,
 			ret = this;
@@ -175,8 +199,12 @@ __Thread.prototype = {
 		return ret;
 	},
 	
-	/**********************
-	 * 定义所有回调函数的参数
+	/**
+	 * 定义回调函数的参数。
+	 * @param value1 {*} 第一个参数
+	 * @param {*} [value2] 第二个参数
+	 * …………
+	 * @param {*} [valuen] 第n个参数
 	 */
 	define: function(){
 		if(!arguments.length) return;
@@ -189,8 +217,10 @@ __Thread.prototype = {
 		return this;
 	},
 	
-	/**********************
-	 * 然后运行fn，或者然后延迟delay运行fn
+	/**
+	 * 然后运行，或者延迟后在运行
+	 * @param fn {Function} 要回调的函数
+	 * @param {Number} [delay] 延迟时间
 	 */
 	then: function(__fn, __delay){
 		this.callbacks.push(this.__package(__fn, __delay));
@@ -198,8 +228,9 @@ __Thread.prototype = {
 		return this;
 	},
 	
-	/**********************
-	 * 保证线程不阻塞的最快运行fn的方法
+	/**
+	 * 然后运行。该方法不会阻塞浏览器线程。
+	 * @param fn {Function} the callback function
 	 */
 	imm: function(__fn){
 		this.callbacks.push(this.__package2(__fn));
@@ -207,22 +238,22 @@ __Thread.prototype = {
 		return this;
 	},
 	
-	/**********************
-	 * 等待__delay在运行后面步骤
+	/**
+	 * 等待一段时间。
+	 * @param delay {Number} 等待的时长
 	 */
 	wait: function(__delay){
 		return this.then(tool_nullFun, __delay);
 	},
 	
-	/**********************
-	 * 启动线程，注意和fire不相同
+	/**
+	 * 启动线程。
 	 */
 	run: function(){
 		if(!this.fired){
 			if(arguments.length){
 				this.define(tool_slice.call(arguments));
 			}
-			this.isStop = false;
 			this.fired = true;
 			this.fire();
 		}
@@ -230,8 +261,9 @@ __Thread.prototype = {
 		return this;
 	},
 	
-	/**********************
-	 * 创建循环线程Loop
+	/**
+	 * 创建Loop线程
+	 * @param n {Number} 循环的次数，如果是负数，则无限循环
 	 */
 	loop: function(__n){
 		var self = this,
@@ -240,7 +272,7 @@ __Thread.prototype = {
 		ret.index = 0;
 		ret.args = [0];
 		/**********************
-		* 重写Loop的fire方法
+		* 重现Loop的fire方法
 		*/
 		ret.fire = function(){
 			var fn;
@@ -268,7 +300,7 @@ __Thread.prototype = {
 			return this;
 		};
 		/**********************
-		* 重写Loop的define，使得定义的参数是从第二个开始的
+		* 重写Loop线程的define方法，使得传参从第二个开始。
 		*/
 		ret.define = function(){
 			var tmp = tool_slice.call(arguments)
@@ -277,7 +309,7 @@ __Thread.prototype = {
 			return this;
 		};
 		/**********************
-		* 退出Loop返回原线程
+		* 退出Loop线程，返回主线程
 		*/
 		ret.loopEnd = function(){
 			var that = this;
@@ -288,8 +320,7 @@ __Thread.prototype = {
 			return self;
 		};
 		/**********************
-		* 线程中途退出，类似于break，不过只能在该循环的回调函数中使用
-		* 【Remind】 未来需要修改
+		* 在Loop中途退出Loop。
 		*/
 		ret.breakOut = function(){
 			isBreak = true;
@@ -298,7 +329,8 @@ __Thread.prototype = {
 	},
 	
 	/**********************
-	 * 创建分支线程Right
+	 * 创建一个Right线程
+	 * @param boolean {Boolean | Function} 如果为true则启动Right线程，否则启动Left线程
 	 */
 	right: function(__true){
 		var self = this,
@@ -307,20 +339,20 @@ __Thread.prototype = {
 			fn = function(){
 			var isTrue = typeof __true === "function" ? __true.call(self, self.args) : __true;
 			if(isTrue){
-				self.callbacks.unshift(function(){ret.run();});
+				self.callbacks.push(function(){ret.run();});
 			}else{
 				if(leftObj){
-					self.callbacks.unshift(function(){leftObj.run();});
+					self.callbacks.push(function(){leftObj.run();});
 				}
 			};
 		};
 		/**********************
-		* 返回Left分支
+		* 创建一个Left线程
 		*/
 		ret.left = function(){
 			var self = this;
 			/**********************
-			* 退出Left分支，返回其Right分支
+			* 退出Left线程
 			*/
 			leftObj.leftEnd = function(){
 				setThread(this.name, self);
@@ -332,7 +364,7 @@ __Thread.prototype = {
 			return leftObj;
 		};
 		/**********************
-		* 退出Right分支，返回原线程
+		* 退出Right线程，返回主线程
 		*/
 		ret.rightEnd = function(){
 			
@@ -381,6 +413,10 @@ __Thread.prototype = {
 
 cache[expando] = new __Thread(expando);
 
+/**
+ * 获取或创建一个Thread
+ * @param {String | Number} [name] 没有名字则是返回默认线程，否则通过名字获取或创建
+ */
 function Thread(__name){
 	if(length >= max){
 		throw "Too much Threads to be created!"
@@ -390,6 +426,6 @@ function Thread(__name){
 			(new __Thread(__name));
 }
 
-host.Thread = Thread;
+return Thread;
 
-})(window);
+})());
